@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 艾宾浩斯单词学习计划</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4f46e5;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4f46e5;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e7ff;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        button {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .error-message {
+            color: #ef4444;
+            margin: 10px 0;
+            text-align: center;
+            display: none;
+        }
+
+        .switch-form {
+            margin-top: 20px;
+            text-align: center;
+            color: #6b7280;
+        }
+
+        .switch-form a {
+            color: #4f46e5;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .switch-form a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loginForm">
+            <h1>登录</h1>
+            <form onsubmit="return handleLogin(event)">
+                <div class="input-group">
+                    <label for="loginUsername">用户名</label>
+                    <input type="text" id="loginUsername" required>
+                </div>
+                <div class="input-group">
+                    <label for="loginPassword">密码</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit">登录</button>
+                <div id="loginError" class="error-message"></div>
+                <div class="switch-form">
+                    还没有账号？<a onclick="switchForm('register')">立即注册</a>
+                </div>
+            </form>
+        </div>
+
+        <div id="registerForm" style="display: none;">
+            <h1>注册</h1>
+            <form onsubmit="return handleRegister(event)">
+                <div class="input-group">
+                    <label for="registerUsername">用户名</label>
+                    <input type="text" id="registerUsername" required minlength="3" maxlength="20">
+                </div>
+                <div class="input-group">
+                    <label for="registerPassword">密码</label>
+                    <input type="password" id="registerPassword" required minlength="6">
+                </div>
+                <button type="submit">注册</button>
+                <div id="registerError" class="error-message"></div>
+                <div class="switch-form">
+                    已有账号？<a onclick="switchForm('login')">立即登录</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://wdwvfaugmvaq.sealoshzh.site';
+
+        function switchForm(type) {
+            document.getElementById('loginForm').style.display = type === 'login' ? 'block' : 'none';
+            document.getElementById('registerForm').style.display = type === 'register' ? 'block' : 'none';
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('registerError').style.display = 'none';
+        }
+
+        // 添加重试机制的fetch函数
+        async function fetchWithRetry(url, options, maxRetries = 3) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    console.log(`尝试请求 ${url} (第${i + 1}次)`);
+                    const response = await fetch(url, {
+                        ...options,
+                        // 添加超时设置
+                        signal: AbortSignal.timeout(10000) // 10秒超时
+                    });
+                    return response;
+                } catch (error) {
+                    console.error(`第${i + 1}次请求失败:`, error);
+                    if (i === maxRetries - 1) throw error; // 最后一次尝试时抛出错误
+                    // 等待一段时间后重试
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                }
+            }
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            // 设置登录状态标志
+            isLoggingIn = true;
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorElement = document.getElementById('loginError');
+
+            try {
+                console.log('开始登录请求...');
+                console.log('请求URL:', `${API_BASE_URL}/api/auth/login`);
+                console.log('请求数据:', { username });
+
+                // 使用带重试的fetch
+                const response = await fetchWithRetry(
+                    `${API_BASE_URL}/api/auth/login`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ username, password })
+                    }
+                );
+
+                console.log('收到响应状态:', response.status);
+                console.log('响应头:', Object.fromEntries(response.headers.entries()));
+
+                const data = await response.json();
+                console.log('解析响应数据:', data);
+
+                console.log('检查登录响应:', data);
+                
+                if (!data.success) {
+                    throw new Error(data.message || '登录失败');
+                }
+
+                if (!data.token) {
+                    throw new Error('服务器未返回token');
+                }
+
+                console.log('登录成功，获取到的数据：', data);
+                
+                // 保存token（确保token格式正确）
+                const token = data.token.startsWith('Bearer ') ? data.token : `Bearer ${data.token}`;
+                console.log('准备保存token:', token);
+                
+                // 清除旧数据并保存新token
+                sessionStorage.clear();
+                sessionStorage.setItem('token', token);
+                
+                // 立即验证token是否正确保存
+                const savedToken = sessionStorage.getItem('token');
+                console.log('验证保存的token:', savedToken);
+                
+                if (!savedToken || savedToken !== token) {
+                    throw new Error('token保存验证失败');
+                }
+
+                // 获取用户信息
+                console.log('开始获取用户信息...');
+                const userResponse = await fetch(`${API_BASE_URL}/api/auth/me`, {
+                    headers: {
+                        'Authorization': savedToken,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const userData = await userResponse.json();
+                console.log('用户信息:', userData);
+
+                if (!userData.success) {
+                    throw new Error('获取用户信息失败');
+                }
+
+                // 保存用户信息
+                sessionStorage.setItem('user', JSON.stringify(userData.data));
+                
+                // 再次验证所有数据是否正确保存
+                const finalCheck = {
+                    token: sessionStorage.getItem('token'),
+                    user: sessionStorage.getItem('user')
+                };
+                console.log('最终存储状态检查:', finalCheck);
+                
+                // 使用完整的URL路径进行跳转
+                const currentPath = window.location.pathname;
+                const basePath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+                const targetUrl = basePath + 'aibin.html';
+                
+                console.log('即将跳转到:', targetUrl);
+                
+                // 设置重定向标志
+                isRedirecting = true;
+                
+                // 确保所有异步操作完成后再跳转
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // 直接跳转
+                window.location.replace(targetUrl);
+            } catch (error) {
+                console.error('登录失败:', error);
+                let errorMessage = '登录失败';
+                
+                if (error.name === 'AbortError') {
+                    errorMessage = '请求超时，请检查网络连接';
+                } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    errorMessage = '无法连接到服务器，请检查网络连接';
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+
+                errorElement.textContent = errorMessage;
+                errorElement.style.display = 'block';
+            } finally {
+                // 重置所有状态标志
+                isLoggingIn = false;
+                isRedirecting = false;
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const errorElement = document.getElementById('registerError');
+
+            try {
+                console.log('开始注册请求...');
+                const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                console.log('收到响应:', response.status);
+                const data = await response.json();
+                console.log('解析响应数据:', data);
+
+                if (!data.success) {
+                    throw new Error(data.message || '注册失败');
+                }
+
+                console.log('注册成功，获取到的数据：', data);
+                
+                // 保存token（确保token格式正确）
+                const token = data.token.startsWith('Bearer ') ? data.token : `Bearer ${data.token}`;
+                console.log('准备保存token:', token);
+                
+                // 清除旧数据并保存新token
+                sessionStorage.clear();
+                sessionStorage.setItem('token', token);
+                
+                // 立即验证token是否正确保存
+                const savedToken = sessionStorage.getItem('token');
+                console.log('验证保存的token:', savedToken);
+                
+                if (!savedToken || savedToken !== token) {
+                    throw new Error('token保存验证失败');
+                }
+
+                // 获取用户信息
+                console.log('开始获取用户信息...');
+                const userResponse = await fetch(`${API_BASE_URL}/api/auth/me`, {
+                    headers: {
+                        'Authorization': savedToken,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const userData = await userResponse.json();
+                console.log('用户信息:', userData);
+
+                if (!userData.success) {
+                    throw new Error('获取用户信息失败');
+                }
+
+                // 保存用户信息
+                sessionStorage.setItem('user', JSON.stringify(userData.data));
+                
+                // 再次验证所有数据是否正确保存
+                const finalCheck = {
+                    token: sessionStorage.getItem('token'),
+                    user: sessionStorage.getItem('user')
+                };
+                console.log('最终存储状态检查:', finalCheck);
+                
+                // 使用完整的URL路径进行跳转
+                const currentPath = window.location.pathname;
+                const basePath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+                const targetUrl = basePath + 'aibin.html';
+                
+                console.log('即将跳转到:', targetUrl);
+                
+                // 直接跳转
+                window.location.replace(targetUrl);
+            } catch (error) {
+                console.error('注册失败:', error);
+                errorElement.textContent = error.message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        // 检查是否已登录
+        let isLoggingIn = false; // 添加标志来跟踪登录过程
+        let isRedirecting = false; // 添加标志来跟踪重定向状态
+
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        async function checkLoginStatus() {
+            // 如果正在登录或重定向中，不执行检查
+            if (isLoggingIn || isRedirecting) {
+                console.log('正在登录或重定向中，跳过登录状态检查');
+                return;
+            }
+
+            const token = sessionStorage.getItem('token');
+            if (!token) {
+                console.log('未找到token，停留在登录页');
+                return;
+            }
+
+            try {
+                console.log('开始验证现有token...');
+                const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+                    headers: {
+                        'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                console.log('token验证结果:', data);
+                
+                if (data.success) {
+                    sessionStorage.setItem('user', JSON.stringify(data.data));
+                    
+                    // 如果当前不在aibin.html，则跳转
+                    if (!window.location.pathname.endsWith('aibin.html')) {
+                        const currentPath = window.location.pathname;
+                        const basePath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+                        const targetUrl = basePath + 'aibin.html';
+                        console.log('验证成功，跳转到:', targetUrl);
+                        window.location.replace(targetUrl);
+                    }
+                } else {
+                    console.log('token无效，清除存储');
+                    sessionStorage.clear();
+                }
+            } catch (error) {
+                console.error('验证token失败:', error);
+                sessionStorage.clear();
+            }
+        }
+
+        // 使用防抖处理登录状态检查
+        const debouncedCheckLoginStatus = debounce(checkLoginStatus, 500);
+
+        // 仅在页面加载完成后执行一次登录状态检查
+        let initialCheckDone = false;
+        
+        // 延迟执行初始检查，确保不会干扰登录过程
+        setTimeout(() => {
+            if (!initialCheckDone && !isLoggingIn && !isRedirecting) {
+                initialCheckDone = true;
+                debouncedCheckLoginStatus();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

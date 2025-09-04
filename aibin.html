@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>艾宾浩斯单词学习计划</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card h3 {
+            color: #6a11cb;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card p {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .plan-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .day-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .day-tab {
+            padding: 10px 15px;
+            background-color: #e0e7ff;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .day-tab:hover {
+            background-color: #c7d2fe;
+        }
+        
+        .day-tab.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        .day-content {
+            display: none;
+        }
+        
+        .day-content.active {
+            display: block;
+        }
+        
+        .word-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .word-card {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .review-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 8px;
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .new-badge {
+            background: #10b981;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #6b7280;
+        }
+        
+        .input-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .word-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: flex-end;
+        }
+
+        .input-group {
+            flex: 1;
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4f46e5;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e0e7ff;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        .word-list-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e0e7ff;
+        }
+
+        .saved-words-list {
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .saved-word-item {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #e0e7ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .word-actions {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .saved-word-item .word-info {
+            flex-grow: 1;
+        }
+
+        .saved-word-item .word-text {
+            font-weight: bold;
+            color: #4f46e5;
+        }
+
+        .saved-word-item .word-translation {
+            color: #64748b;
+            font-size: 0.9em;
+        }
+
+        .word-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .display-mode-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .display-mode-container label {
+            color: #4f46e5;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .display-mode-container select {
+            padding: 5px 10px;
+            border: 2px solid #e0e7ff;
+            border-radius: 5px;
+            background: white;
+            color: #4f46e5;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .display-mode-container select:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        /* 隐藏模式样式 */
+        .hide-english .word-text {
+            color: transparent;
+            background-color: #e0e7ff;
+            border-radius: 3px;
+            user-select: none;
+        }
+
+        .hide-chinese .word-translation {
+            color: transparent;
+            background-color: #e0e7ff;
+            border-radius: 3px;
+            user-select: none;
+        }
+
+        .hide-all .word-text,
+        .hide-all .word-translation {
+            color: transparent;
+            background-color: #e0e7ff;
+            border-radius: 3px;
+            user-select: none;
+        }
+
+        /* 全遮盖模式下的按钮样式 */
+        .toggle-visibility-btn {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .toggle-visibility-btn:hover {
+            background: #3730a3;
+        }
+
+        .delete-word-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-size: 0.8em;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .delete-word-btn:hover {
+            opacity: 1;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 10px;
+        }
+
+        .pagination button {
+            background: white;
+            color: #4f46e5;
+            border: 1px solid #e0e7ff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination button:hover:not([disabled]) {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .pagination button[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination span {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .plan-input-group {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e7ff;
+        }
+
+        #addWordBtn, #generatePlanBtn {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            height: 40px;
+        }
+
+        #generatePlanBtn {
+            width: 100%;
+        }
+
+        #addWordBtn:hover, #generatePlanBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                flex-direction: column;
+            }
+            
+            .day-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>艾宾浩斯单词学习计划</h1>
+            <p class="description">基于艾宾浩斯遗忘曲线算法，帮助您高效记忆单词</p>
+        </header>
+
+        <div class="input-section">
+            <div class="word-input-group">
+                <div class="input-group">
+                    <label for="wordInput">输入单词：</label>
+                    <input type="text" id="wordInput" placeholder="请输入单词">
+                </div>
+                <div class="input-group">
+                    <label for="translationInput">输入翻译：</label>
+                    <input type="text" id="translationInput" placeholder="请输入翻译">
+                </div>
+                <button id="addWordBtn">添加单词</button>
+            </div>
+            
+            <div class="word-list-container">
+                <div class="word-list-header">
+                    <h3>已添加的单词 (<span id="wordCount">0</span>)</h3>
+                    <div class="display-mode-container">
+                        <label for="displayMode">显示模式：</label>
+                        <select id="displayMode">
+                            <option value="show-all">无遮盖</option>
+                            <option value="hide-english">遮盖英文</option>
+                            <option value="hide-chinese">遮盖中文</option>
+                            <option value="hide-all">全遮盖</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="savedWordsList" class="saved-words-list"></div>
+                <div id="pagination" class="pagination"></div>
+            </div>
+
+            <div class="plan-input-group">
+                <div class="input-group">
+                    <label for="wordsPerDay">每日新词：</label>
+                    <input type="number" id="wordsPerDay" min="1" required>
+                </div>
+                <button id="generatePlanBtn">生成学习计划</button>
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>总单词量</h3>
+                <p id="totalWordsDisplay">-</p>
+            </div>
+            <div class="stat-card">
+                <h3>学习天数</h3>
+                <p id="totalDaysDisplay">-</p>
+            </div>
+            <div class="stat-card">
+                <h3>每日新词</h3>
+                <p id="wordsPerDayDisplay">-</p>
+            </div>
+        </div>
+        
+        <div class="plan-container">
+            <h2>学习计划表</h2>
+            <p>点击日期查看每天需要学习和复习的单词</p>
+            
+            <div class="day-tabs" id="dayTabs">
+                <!-- 日期标签将通过JS生成 -->
+            </div>
+            
+            <div id="dayContents">
+                <!-- 每天的内容将通过JS生成 -->
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 艾宾浩斯单词学习计划 | 基于艾宾浩斯遗忘曲线算法</p>
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://wdwvfaugmvaq.sealoshzh.site';
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 防抖函数
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+
+            // 检查登录状态
+            async function checkLoginStatus() {
+                console.log('开始检查登录状态...');
+                
+                // 检查sessionStorage中的所有内容
+                console.log('当前sessionStorage内容:', {
+                    token: sessionStorage.getItem('token'),
+                    user: sessionStorage.getItem('user')
+                });
+
+                const token = sessionStorage.getItem('token');
+                
+                if (!token) {
+                    console.log('未找到token，准备跳转到登录页');
+                    // 使用replace避免浏览器历史堆积
+                    window.location.replace('login.html');
+                    return null;
+                }
+
+                try {
+                    console.log('验证token有效性...');
+                    console.log('使用的token:', token);
+                    
+                    // 验证token是否有效
+                    const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+                        headers: {
+                            'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`,
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    console.log('验证请求状态:', response.status);
+                    console.log('验证响应头:', Object.fromEntries(response.headers.entries()));
+
+                    const data = await response.json();
+                    console.log('获取到用户信息:', data);
+                    
+                    if (!data.success) {
+                        throw new Error('Token无效');
+                    }
+
+                    // 更新用户信息
+                    sessionStorage.setItem('user', JSON.stringify(data.data));
+                    return data.data;
+                } catch (error) {
+                    console.error('验证token失败:', error);
+                    sessionStorage.clear();
+                    window.location.replace('login.html');
+                    return null;
+                }
+            }
+
+            // 延迟执行登录检查，给token存储一些时间
+            const user = await new Promise((resolve) => {
+                setTimeout(async () => {
+                    try {
+                        const userData = await checkLoginStatus();
+                        resolve(userData);
+                    } catch (error) {
+                        console.error('登录检查失败:', error);
+                        resolve(null);
+                    }
+                }, 1000); // 延迟1秒执行
+            });
+
+            if (!user) {
+                console.log('用户未登录或登录失效');
+                return;
+            }
+
+            console.log('用户已登录:', user);
+
+            // 创建按钮容器
+            const header = document.querySelector('header');
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.cssText = `
+                display: flex;
+                gap: 10px;
+                margin-top: 10px;
+            `;
+
+            // 通用按钮样式
+            const buttonStyle = `
+                background: white;
+                color: #4f46e5;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 1rem;
+                transition: all 0.3s ease;
+            `;
+
+            // 添加刷新按钮
+            const refreshBtn = document.createElement('button');
+            refreshBtn.textContent = '刷新单词列表';
+            refreshBtn.className = 'btn';
+            refreshBtn.style.cssText = buttonStyle;
+            refreshBtn.addEventListener('click', () => {
+                fetchWords();
+            });
+            buttonContainer.appendChild(refreshBtn);
+
+            // 检查是否是特定用户并添加设置按钮
+            const userStr = sessionStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                if (user.username === 'lifei') {
+                    const settingsBtn = document.createElement('button');
+                    settingsBtn.textContent = '设置';
+                    settingsBtn.className = 'btn';
+                    settingsBtn.style.cssText = buttonStyle;
+                    settingsBtn.addEventListener('click', () => {
+                        window.location.replace('admin.html');
+                    });
+                    buttonContainer.appendChild(settingsBtn);
+                }
+            }
+
+            // 添加退出登录按钮
+            const logoutBtn = document.createElement('button');
+            logoutBtn.textContent = '退出登录';
+            logoutBtn.className = 'btn';
+            logoutBtn.style.cssText = buttonStyle;
+            logoutBtn.addEventListener('click', () => {
+                sessionStorage.clear();
+                window.location.replace('login.html');
+            });
+            buttonContainer.appendChild(logoutBtn);
+
+            // 将按钮容器添加到header
+            header.appendChild(buttonContainer);
+
+            // 全局变量已在前面定义
+
+                        // 获取用户信息
+            async function fetchUserInfo() {
+                try {
+                    const token = sessionStorage.getItem('token');
+                    if (!token) {
+                        throw new Error('未找到token');
+                    }
+
+                    const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+                        headers: {
+                            'Authorization': token,
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('获取用户信息失败');
+                    }
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.message);
+                    }
+
+                    sessionStorage.setItem('user', JSON.stringify(data.data));
+                    return data.data;
+                } catch (error) {
+                    console.error('获取用户信息失败:', error);
+                    sessionStorage.clear();
+                    window.location.replace('login.html');
+                    return null;
+                }
+            }
+
+            // 全局变量
+            const reviewIntervals = [0, 1, 2, 4, 7, 15];
+            let wordsPerDay = 0;
+            let days = 0;
+            let wordsList = [];
+            let currentPage = 1;
+            const pageSize = 10;
+            let totalPages = 1;
+            let totalWords = 0;
+            let currentDisplayMode = 'show-all';
+
+            // 从服务器获取单词列表
+            async function fetchWords(page = 1) {
+                try {
+                    const token = sessionStorage.getItem('token');
+                    if (!token) {
+                        throw new Error('未找到token');
+                    }
+
+                    const response = await fetch(`${API_BASE_URL}/api/words?page=${page}&limit=${pageSize}`, {
+                        headers: {
+                            'Authorization': token,
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('获取单词列表失败');
+                    }
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.message);
+                    }
+
+                    // 更新分页信息
+                    currentPage = data.pagination.page;
+                    totalPages = data.pagination.pages;
+                    totalWords = data.total;
+
+                    wordsList = data.data.map(word => ({
+                        id: word.id,
+                        word: word.english,
+                        translation: word.chinese
+                    }));
+
+                    updateWordsList();
+                    updateTotalWords();
+                    updatePagination();
+                } catch (error) {
+                    alert(error.message);
+                }
+            }
+
+            // 更新分页控件
+            function updatePagination() {
+                const paginationContainer = document.getElementById('pagination');
+                if (!paginationContainer) {
+                    return;
+                }
+
+                const buttons = [
+                    { text: '首页', page: 1, disabled: currentPage === 1 },
+                    { text: '上一页', page: currentPage - 1, disabled: currentPage === 1 },
+                    { text: '下一页', page: currentPage + 1, disabled: currentPage === totalPages },
+                    { text: '末页', page: totalPages, disabled: currentPage === totalPages }
+                ];
+
+                // 清空现有内容
+                paginationContainer.innerHTML = '';
+
+                // 创建按钮元素
+                buttons.forEach(button => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn';
+                    btn.textContent = button.text;
+                    btn.disabled = button.disabled;
+                    if (!button.disabled) {
+                        btn.addEventListener('click', () => fetchWords(button.page));
+                    }
+                    paginationContainer.appendChild(btn);
+
+                    // 如果是上一页按钮，在其后添加页码信息
+                    if (button.text === '上一页') {
+                        const pageInfo = document.createElement('span');
+                        pageInfo.textContent = `第 ${currentPage} 页，共 ${totalPages} 页`;
+                        paginationContainer.appendChild(pageInfo);
+                    }
+                });
+            }
+
+            // 添加单词到服务器
+            async function addWordToServer(word, translation) {
+                try {
+                    const token = sessionStorage.getItem('token');
+                    if (!token) {
+                        throw new Error('未找到token');
+                    }
+
+                    const response = await fetch(`${API_BASE_URL}/api/words`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': token,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            english: word,
+                            chinese: translation
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('添加单词失败');
+                    }
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.message);
+                    }
+
+                    // 添加成功后重新获取第一页数据
+                    await fetchWords(1);
+                } catch (error) {
+                    alert(error.message);
+                }
+            }
+
+            // 从服务器删除单词
+            async function deleteWordFromServer(id) {
+                try {
+                    const token = sessionStorage.getItem('token');
+                    if (!token) {
+                        throw new Error('未找到token');
+                    }
+
+                    const response = await fetch(`${API_BASE_URL}/api/words/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': token,
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('删除单词失败');
+                    }
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.message);
+                    }
+
+                    // 删除成功后重新获取当前页数据
+                    await fetchWords(currentPage);
+                } catch (error) {
+                    alert(error.message);
+                }
+            }
+
+            // 添加单词到列表
+            async function addWord(word, translation) {
+                await addWordToServer(word, translation);
+                
+                // 清空输入框
+                document.getElementById('wordInput').value = '';
+                document.getElementById('translationInput').value = '';
+                document.getElementById('wordInput').focus();
+            }
+
+            // 从列表中删除单词
+            async function deleteWord(id) {
+                await deleteWordFromServer(id);
+            }
+
+            // 更新单词列表显示
+            function updateWordsList() {
+                const savedWordsList = document.getElementById('savedWordsList');
+                savedWordsList.innerHTML = '';
+
+                wordsList.forEach(item => {
+                    const wordElement = document.createElement('div');
+                    wordElement.className = 'saved-word-item';
+                    
+                    // 根据显示模式添加相应的CSS类
+                    if (currentDisplayMode === 'hide-english') {
+                        wordElement.classList.add('hide-english');
+                    } else if (currentDisplayMode === 'hide-chinese') {
+                        wordElement.classList.add('hide-chinese');
+                    } else if (currentDisplayMode === 'hide-all') {
+                        wordElement.classList.add('hide-all');
+                    }
+                    
+                    let toggleButton = '';
+                    if (currentDisplayMode === 'hide-all') {
+                        toggleButton = '<button class="toggle-visibility-btn" data-id="' + item.id + '">无遮盖</button>';
+                    }
+                    
+                    wordElement.innerHTML = `
+                        <div class="word-info">
+                            <div class="word-text">${item.word}</div>
+                            <div class="word-translation">${item.translation}</div>
+                        </div>
+                        <div class="word-actions">
+                            ${toggleButton}
+                            <button class="delete-word-btn" data-id="${item.id}">删除</button>
+                        </div>
+                    `;
+                    savedWordsList.appendChild(wordElement);
+                });
+
+                // 更新单词计数
+                document.getElementById('wordCount').textContent = wordsList.length;
+            }
+
+            // 更新总单词量显示
+            function updateTotalWords() {
+                document.getElementById('totalWordsDisplay').textContent = totalWords;
+                document.getElementById('wordCount').textContent = totalWords;
+            }
+
+            // 添加单词按钮事件
+            document.getElementById('addWordBtn').addEventListener('click', function() {
+                const wordInput = document.getElementById('wordInput');
+                const translationInput = document.getElementById('translationInput');
+                const word = wordInput.value.trim();
+                const translation = translationInput.value.trim();
+
+                if (word && translation) {
+                    addWord(word, translation);
+                } else {
+                    alert('请输入单词和翻译！');
+                }
+            });
+
+            // 删除单词按钮事件委托
+            document.getElementById('savedWordsList').addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-word-btn')) {
+                    const id = parseInt(e.target.dataset.id);
+                    deleteWord(id);
+                } else if (e.target.classList.contains('toggle-visibility-btn')) {
+                    // 切换单个单词的可见性
+                    const wordElement = e.target.closest('.saved-word-item');
+                    if (wordElement.classList.contains('hide-all')) {
+                        wordElement.classList.remove('hide-all');
+                        e.target.textContent = '全遮盖';
+                        e.target.style.background = '#ef4444';
+                    } else {
+                        wordElement.classList.add('hide-all');
+                        e.target.textContent = '无遮盖';
+                        e.target.style.background = '#4f46e5';
+                    }
+                }
+            });
+
+            // 计算所需的学习天数
+            function calculateDays(totalWords, wordsPerDay) {
+                return Math.ceil(totalWords / wordsPerDay);
+            }
+
+            // 清除现有计划
+            function clearPlan() {
+                document.getElementById('dayTabs').innerHTML = '';
+                document.getElementById('dayContents').innerHTML = '';
+            }
+            
+            // 生成学习计划
+            function generatePlan(wordsPerDay) {
+                if (wordsList.length === 0) {
+                    alert('请先添加单词！');
+                    return null;
+                }
+
+                const totalWords = wordsList.length;
+                const days = calculateDays(totalWords, wordsPerDay);
+                const plan = [];
+                
+                for (let day = 1; day <= days; day++) {
+                    const dayPlan = {
+                        day: day,
+                        newWords: [],
+                        reviewWords: []
+                    };
+                    
+                    // 添加新单词
+                    const startIndex = (day - 1) * wordsPerDay;
+                    const endIndex = Math.min(day * wordsPerDay, totalWords);
+                    
+                    for (let i = startIndex; i < endIndex; i++) {
+                        dayPlan.newWords.push(wordsList[i]);
+                    }
+                    
+                    // 添加需要复习的单词（根据艾宾浩斯曲线）
+                    for (let prevDay = 1; prevDay < day; prevDay++) {
+                        // 检查这一天学习的单词是否需要在今天复习
+                        for (const interval of reviewIntervals) {
+                            if (day === prevDay + interval) {
+                                const prevStart = (prevDay - 1) * wordsPerDay;
+                                const prevEnd = Math.min(prevDay * wordsPerDay, totalWords);
+                                
+                                for (let i = prevStart; i < prevEnd; i++) {
+                                    const reviewWord = wordsList[i];
+                                    dayPlan.reviewWords.push({
+                                        ...reviewWord,
+                                        learnedDay: prevDay
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    
+                    plan.push(dayPlan);
+                }
+                
+                return plan;
+            }
+            
+            // 渲染学习计划
+            function renderPlan(plan) {
+                if (!plan) return;
+
+                const dayTabs = document.getElementById('dayTabs');
+                const dayContents = document.getElementById('dayContents');
+                
+                clearPlan();
+                
+                // 生成日期标签
+                plan.forEach(dayPlan => {
+                    const tab = document.createElement('div');
+                    tab.className = 'day-tab';
+                    tab.textContent = `第 ${dayPlan.day} 天`;
+                    tab.dataset.day = dayPlan.day;
+                    
+                    tab.addEventListener('click', () => {
+                        // 移除所有active类
+                        document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+                        document.querySelectorAll('.day-content').forEach(c => c.classList.remove('active'));
+                        
+                        // 添加active类
+                        tab.classList.add('active');
+                        document.getElementById(`day-${dayPlan.day}`).classList.add('active');
+                    });
+                    
+                    dayTabs.appendChild(tab);
+                    
+                    // 生成每天的内容
+                    const content = document.createElement('div');
+                    content.className = 'day-content';
+                    content.id = `day-${dayPlan.day}`;
+                    
+                    content.innerHTML = `
+                        <h3>第 ${dayPlan.day} 天学习任务</h3>
+                        <p>新单词: ${dayPlan.newWords.length}个 | 复习单词: ${dayPlan.reviewWords.length}个</p>
+                        
+                        <h4>新单词</h4>
+                        <div class="word-list">
+                            ${dayPlan.newWords.map(word => `
+                                <div class="word-card">
+                                    <div class="word-text">${word.word}</div>
+                                    <div class="word-translation">${word.translation}</div>
+                                    <span class="review-badge new-badge">新</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <h4>需要复习的单词</h4>
+                        ${dayPlan.reviewWords.length > 0 ? `
+                            <div class="word-list">
+                                ${dayPlan.reviewWords.map(word => `
+                                    <div class="word-card">
+                                        <div class="word-text">${word.word}</div>
+                                        <div class="word-translation">${word.translation}</div>
+                                        <span class="review-badge">复习 (第${word.learnedDay}天学习)</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<p>今天没有需要复习的单词</p>'}
+                    `;
+                    
+                    dayContents.appendChild(content);
+                });
+                
+                // 默认激活第一天
+                if (plan.length > 0) {
+                document.querySelector('.day-tab').classList.add('active');
+                document.getElementById('day-1').classList.add('active');
+                }
+            }
+
+            // 更新显示的统计信息
+            function updateStats(wordsPerDay) {
+                document.getElementById('totalWordsDisplay').textContent = totalWords;
+                document.getElementById('wordsPerDayDisplay').textContent = wordsPerDay;
+                document.getElementById('totalDaysDisplay').textContent = 
+                    calculateDays(totalWords, wordsPerDay);
+            }
+
+            // 处理生成计划按钮点击
+            document.getElementById('generatePlanBtn').addEventListener('click', function() {
+                const wordsPerDayInput = document.getElementById('wordsPerDay');
+                wordsPerDay = parseInt(wordsPerDayInput.value);
+
+                if (!wordsPerDay || wordsPerDay < 1) {
+                    alert('请输入有效的每日新词数！');
+                    return;
+                }
+
+                if (wordsPerDay > totalWords) {
+                    alert('每日新词数不能大于总单词量！');
+                    return;
+                }
+
+                days = calculateDays(totalWords, wordsPerDay);
+                updateStats(wordsPerDay);
+                const plan = generatePlan(wordsPerDay);
+                renderPlan(plan);
+            });
+
+            // 显示模式切换事件监听器
+            document.getElementById('displayMode').addEventListener('change', function(e) {
+                currentDisplayMode = e.target.value;
+                updateWordsList();
+            });
+
+            // 初始化：获取用户信息和单词列表
+            async function initialize() {
+                console.log('开始初始化...');
+                
+                // 检查是否有token
+                const token = sessionStorage.getItem('token');
+                if (!token) {
+                    console.log('未找到token，重定向到登录页');
+                    window.location.replace('login.html');
+                    return;
+                }
+                console.log('找到token:', token);
+
+                try {
+                    // 获取用户信息
+                    console.log('开始获取用户信息...');
+                    const userData = await fetchUserInfo();
+                    if (!userData) {
+                        console.log('获取用户信息失败，停止初始化');
+                        return;
+                    }
+                    console.log('用户信息获取成功:', userData);
+
+                    // 获取单词列表
+                    console.log('开始获取单词列表...');
+                    await fetchWords();
+                    console.log('单词列表获取成功');
+
+                    console.log('初始化完成');
+                } catch (error) {
+                    console.error('初始化失败:', error);
+                    sessionStorage.clear();
+                    window.location.replace('login.html');
+                }
+            }
+
+            // 延迟执行初始化，确保页面完全加载
+            setTimeout(() => {
+                console.log('开始执行延迟初始化...');
+                initialize();
+            }, 100);
+        });
+    </script>
+</body>
+</html>

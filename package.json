@@ -1,0 +1,23 @@
+{
+  "name": "aibing-word-learning",
+  "version": "1.0.0",
+  "description": "艾宾浩斯单词学习计划 - 基于艾宾浩斯遗忘曲线的智能单词学习系统",
+  "main": "login.html",
+  "scripts": {
+    "dev": "python -m http.server 8000",
+    "preview": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "ebbinghaus",
+    "vocabulary",
+    "learning",
+    "memory",
+    "words"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "your-repo-url"
+  }
+}

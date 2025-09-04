@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员面板 - 艾宾浩斯单词学习计划</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: white;
+            color: #4f46e5;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4f46e5;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e0e7ff;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .error-message {
+            color: #ef4444;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            color: #10b981;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>管理员面板</h1>
+            <div class="header-right">
+                <button class="btn" id="addUserBtn">添加用户</button>
+                <button class="btn" id="logoutBtn">退出登录</button>
+            </div>
+        </header>
+    </div>
+
+    <!-- 添加用户模态框 -->
+    <div class="modal" id="userModal">
+        <div class="modal-content">
+            <h2>添加用户</h2>
+            <form id="userForm">
+                <div class="input-group">
+                    <label for="username">用户名</label>
+                    <input type="text" id="username" required minlength="3" maxlength="20">
+                </div>
+                <div class="input-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" required minlength="6">
+                </div>
+                <div id="errorMessage" class="error-message"></div>
+                <div id="successMessage" class="success-message"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn" id="cancelBtn">取消</button>
+                    <button type="submit" class="btn">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://wdwvfaugmvaq.sealoshzh.site';
+        
+        // 显示/隐藏模态框
+        function toggleModal(show) {
+            const modal = document.getElementById('userModal');
+            modal.style.display = show ? 'flex' : 'none';
+            if (!show) {
+                document.getElementById('userForm').reset();
+                document.getElementById('errorMessage').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'none';
+            }
+        }
+
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // 添加用户按钮
+            document.getElementById('addUserBtn').addEventListener('click', () => {
+                toggleModal(true);
+            });
+
+            // 取消按钮
+            document.getElementById('cancelBtn').addEventListener('click', () => {
+                toggleModal(false);
+            });
+
+            // 退出登录按钮
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                sessionStorage.clear();
+                window.location.replace('login.html');
+            });
+
+            // 添加用户表单提交
+            document.getElementById('userForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const errorMessage = document.getElementById('errorMessage');
+                const successMessage = document.getElementById('successMessage');
+
+                try {
+                    const token = sessionStorage.getItem('token');
+                    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': token,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.message || '创建用户失败');
+                    }
+
+                    // 显示成功消息
+                    successMessage.textContent = '用户创建成功！';
+                    successMessage.style.display = 'block';
+                    errorMessage.style.display = 'none';
+
+                    // 清空表单
+                    document.getElementById('userForm').reset();
+
+                    // 3秒后关闭模态框
+                    setTimeout(() => {
+                        toggleModal(false);
+                    }, 3000);
+                } catch (error) {
+                    errorMessage.textContent = error.message;
+                    errorMessage.style.display = 'block';
+                    successMessage.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
